@@ -63,4 +63,4 @@ class API(HttpLocust):
     task_set = NavegacaoTasks
     min_wait = 0
     max_wait = 0
-    stop_timeout = 120
+    stop_timeout = 900
