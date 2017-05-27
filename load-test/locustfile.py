@@ -4,7 +4,6 @@ from faker import Faker
 from locust import HttpLocust, TaskSet, task
 from random import randint, choice
 
-
 def register(l):
     _user = getattr(l, 'user', getattr(l.parent, 'user', Faker().simple_profile()))
     _password = getattr(l, 'password', getattr(l.parent, 'password', Faker().password()))
@@ -30,6 +29,26 @@ def login(l):
     response = l.client.get("/login", headers={"Authorization":"Basic %s" % base64string})
     return response
 
+def create_card(l):
+    data = {
+        "longNum": Faker().credit_card_number(),
+        "expires": Faker().credit_card_expire(start="now", end="+10y", date_format="%m/%y"),
+        "ccv": Faker().credit_card_security_code()
+    }
+    response = l.client.post("/cards", json=data)
+    return response
+
+def create_address(l):
+    data = {
+        "number": str(Faker().random_int(min=1, max=9999)),
+        "street": Faker().street_name(),
+        "city": Faker().city(),
+        "postcode": Faker().postcode(),
+        "country": Faker().country()
+    }
+    response = l.client.post("/addresses", json=data)
+    return response
+
 
 class NavegacaoTasks(TaskSet):
 
@@ -37,30 +56,35 @@ class NavegacaoTasks(TaskSet):
     @task
     def load(self):
         
-        self.client.get("/")
+		self.client.get("/")
 
-        login(self)            
-        
-        self.client.get("/category.html")
+		self.user = Faker().simple_profile()
+		self.password = Faker().password()
 
-        catalogue = self.client.get("/catalogue").json()
-        item_id = "03fef6ac-1896-4ce8-bd69-b798f85c6e0b"        
-        self.client.get("/detail.html?id={}".format(item_id))
-        
-        self.client.delete("/cart")        
-        self.client.post("/cart", json={"id": item_id, "quantity": 1})
+		login(self)            
 
-        self.client.get("/basket.html")    
-    
-        with self.client.post("/orders", catch_response=True) as response:
-            if response.status_code == 406:
-                response.success()
+		self.client.get("/category.html")
+
+		tags = self.client.get("/tags").json().get("tags")
+		tag = ["brown","blue"] 
+		self.client.get("/category.html?tags={}".format('&'.join(tag)))
+
+		catalogue = self.client.get("/catalogue").json()
+		item_id = "3395a43e-2d88-40de-b95f-e00e1502085b"        
+		self.client.get("/detail.html?id={}".format(item_id))
+
+		self.client.post("/cart", json={"id": item_id, "quantity": 1})
+
+		self.client.get("/basket.html")
+
+		create_card(self)
+		create_address(self)
+
+		self.client.post("/orders")
 
 
 class API(HttpLocust):
-    user = Faker().simple_profile()
-    password = Faker().password()    
-    task_set = NavegacaoTasks
-    min_wait = 0
-    max_wait = 0
-    stop_timeout = 900
+	task_set = NavegacaoTasks
+	min_wait = 0
+	max_wait = 0
+	stop_timeout = 900
