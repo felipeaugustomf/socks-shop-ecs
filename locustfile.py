@@ -44,8 +44,7 @@ class NavegacaoTasks(TaskSet):
         self.client.get("/category.html")
 
         catalogue = self.client.get("/catalogue").json()
-        category_item = choice(catalogue)
-        item_id = category_item["id"]        
+        item_id = "03fef6ac-1896-4ce8-bd69-b798f85c6e0b"        
         self.client.get("/detail.html?id={}".format(item_id))
         
         self.client.delete("/cart")        
@@ -64,4 +63,4 @@ class API(HttpLocust):
     task_set = NavegacaoTasks
     min_wait = 0
     max_wait = 0
-    stop_timeout = 900
+    stop_timeout = 120
