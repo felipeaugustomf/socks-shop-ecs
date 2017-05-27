@@ -67,12 +67,15 @@ class NavegacaoTasks(TaskSet):
 
 		tags = self.client.get("/tags").json().get("tags")
 		tag = ["brown","blue"] 
+		
 		self.client.get("/category.html?tags={}".format('&'.join(tag)))
 
 		catalogue = self.client.get("/catalogue").json()
 		item_id = "3395a43e-2d88-40de-b95f-e00e1502085b"        
+		
 		self.client.get("/detail.html?id={}".format(item_id))
-
+		
+		self.client.delete("/cart")  
 		self.client.post("/cart", json={"id": item_id, "quantity": 1})
 
 		self.client.get("/basket.html")
@@ -80,7 +83,9 @@ class NavegacaoTasks(TaskSet):
 		create_card(self)
 		create_address(self)
 
-		self.client.post("/orders")
+		with self.client.post("/orders", catch_response=True) as response:
+			if response.status_code == 406:
+				response.success()
 
 
 class API(HttpLocust):
